@@ -1,0 +1,31 @@
+ &coupler_nml
+        months = 6,
+        days   = 5,
+        current_date = 1,1,1,0,0,0,
+        calendar = 'noleap',
+        dt_cpld = 1800,
+        dt_atmos = 1800,
+        do_atmos = .false.,
+        do_land = .false.,   
+        do_ice = .true.,
+        atmos_npes = 0,
+        ocean_npes = 0,
+        check_stocks=0
+/
+
+ &data_override_nml
+
+/
+
+ &diag_manager_nml
+	max_output_fields=700
+	max_input_fields=700
+	max_axes=100
+	max_num_axis_sets=40
+	max_files = 100
+	issue_oor_warnings=.false.
+/
+
+ &flux_exchange_nml
+            do_area_weighted_flux=.true.
+/

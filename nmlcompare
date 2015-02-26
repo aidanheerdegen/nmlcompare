@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+import f90nml
+
+if __name__ == '__main__':
+
+    import argparse, sys
+    
+    parser = argparse.ArgumentParser(description="Report the difference between two FORTRAN namelist files. (=) Means they are same, (-) missing in second, (+) missing in first, (?) exists in both, but with different values")
+    parser.add_argument("-s","--same", help="Show variables that are the same (default False)", action='store_true')
+    parser.add_argument("-d","--diff", help="Show variables that are the different (default True, use -d to toggle off", action='store_false')
+    parser.add_argument("-g","--groups", help="Specify particular namelist groups", action='append')
+    parser.add_argument("first", help="namelist file")
+    parser.add_argument("second", help="namelist file")
+
+    args = parser.parse_args()
+
+    nml_first = f90nml.read(args.first)
+    nml_second = f90nml.read(args.second)
+
+    common_namelists = nml_first.viewkeys() & nml_second.viewkeys()
+
+    debug = False
+
+    havegroups = args.groups is not None
+
+    for name in common_namelists:
+        if not havegroups or (havegroups and name in args.groups):
+            if nml_first[name] != nml_second[name]:
+                sys.stdout.write('(?)%s\n' % (name) )
+                common_vars = nml_first[name].viewkeys() & nml_second[name].viewkeys()
+                for var in common_vars:
+                    if nml_first[name][var] != nml_second[name][var]:
+                        if args.diff:
+                            sys.stdout.write('       (?)%s : %s -> %s\n' % (var, nml_first[name][var], nml_second[name][var]) )
+                    else:
+                        if args.same: sys.stdout.write('       (=)%s : %s\n' % (var, nml_first[name][var]) )
+                    del nml_first[name][var]
+                    del nml_second[name][var]
+                if args.diff:
+                    for var in nml_first[name].viewkeys():
+                        sys.stdout.write('       (-)%s : %s\n' % (var, nml_first[name][var]) )
+                    for var in nml_second[name].viewkeys():
+                        sys.stdout.write('       (+)%s : %s\n' % (var, nml_second[name][var]) )
+            else:
+                if args.same:
+                    sys.stdout.write('(=)%s\n' % (name) )
+
+        del nml_first[name]
+        del nml_second[name]
+
+    if args.diff:
+        for name in nml_first.viewkeys():
+            if not havegroups or (havegroups and name in args.groups):
+                sys.stdout.write('(-)%s\n' % (name) )
+                for var in nml_first[name].viewkeys():
+                    sys.stdout.write('       (-)%s : %s\n' % (var, nml_first[name][var]) )
+
+        for name in nml_second.viewkeys():
+            if not havegroups or (havegroups and name in args.groups):
+                sys.stdout.write('(+)%s\n' % (name) )
+                for var in nml_second[name].viewkeys():
+                    sys.stdout.write('       (+)%s : %s\n' % (var, nml_second[name][var]) )
